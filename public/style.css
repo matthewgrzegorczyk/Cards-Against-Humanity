@@ -1,0 +1,33 @@
+body {
+    font-size: 16px;
+}
+.chat {
+    display: none;
+}
+.setName {
+    margin-top: 150px;
+}
+ul.messages, ul.userList {
+    height: 250px;
+    overflow-y: auto;
+}
+ul.messages {
+    list-style: none;
+    margin: 0px;
+    padding: 0px;
+}
+ul.messages > li {
+    word-wrap: break-word;
+}
+ul.messages > li.pm {
+    background: #FAF !important;
+}
+ul.messages > li:nth-child(odd) {
+    background: #EEE;
+}
+ul.userList {
+    list-style: none;
+}
+.input-group input {
+    border-radius: 0px !important;
+}
