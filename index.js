@@ -127,7 +127,7 @@ io.on('connection', function (socket) {
                 socket.to(socket.activeRoom).emit('userKicked', userName);
             }
         }
-    }
+    };
 
     var ban = function (userName, time) {
         if (socket.isAdmin()) {
@@ -140,7 +140,7 @@ io.on('connection', function (socket) {
                 socket.to(socket.activeRoom).emit('userBanned', banInfo);
             }
         }
-    }
+    };
     
     // Populate user list on disconnect.
     socket.on('disconnect', onDisconnect);
@@ -150,6 +150,10 @@ io.on('connection', function (socket) {
 
     // chatMessage events
     socket.on('chatMessage', onChatMessage);
+    
+    socket.on('kick', kick);
+    
+    socket.on('ban', ban);
 });
 
 http.listen(3000, function () {
