@@ -18,22 +18,22 @@ app.use(express.static('public'));
 
 var clients = {};
 
-var log = function(msg) {
+var log = function (msg) {
     console.log(msg);
 };
 
-var now = function() {
+var now = function () {
     return moment().format('HH:mm:ss');
 };
 
-io.on('connection', function(socket) {
+io.on('connection', function (socket) {
     clients[socket.id] = socket.id;
 
-    socket.getName = function() {
+    socket.getName = function () {
         return (typeof socket.username === 'undefined' ? socket.id : socket.username);
     };
 
-    socket.joinRoom = function(name) {
+    socket.joinRoom = function (name) {
         socket.join(name);
         socket.activeRoom = name;
 
@@ -46,19 +46,23 @@ io.on('connection', function(socket) {
         socket.broadcast.to('default').emit('chatMessage', msg);
     };
 
-    var onDisconnect = function() {
+    var onDisconnect = function () {
         log(socket.getName() + ' left.');
         socket.broadcast.to('default').emit('userLeft', socket.getName());
         socket.emit('dropped');
 
-        if(clients.hasOwnProperty(socket.getName())) {
+        if (clients.hasOwnProperty(socket.getName())) {
             delete clients[socket.getName()];
         }
         socket.broadcast.to('default').emit('populateUserList', clients);
     };
-
-    var onSetName = function(name) {
-        if(clients.hasOwnProperty(socket.getName())) {
+    
+    /*
+     * Event listener.
+     * On set name 
+     */
+    var onSetName = function (name) {
+        if (clients.hasOwnProperty(socket.getName())) {
             delete clients[socket.getName()];
             clients[name] = socket.id;
         }
@@ -73,7 +77,7 @@ io.on('connection', function(socket) {
         // Prepare message for display.
         var message = prepareMessage(msg.text);
 
-        if(msg.text === '/help') {
+        if (msg.text === '/help') {
             // Display message only for the user.
             displayHelp();
         }
@@ -89,23 +93,23 @@ io.on('connection', function(socket) {
         }
     };
 
-    var prepareMessage = function(msg) {
+    var prepareMessage = function (msg) {
         return '[' + now() + '] ' + socket.getName() + ': ' + msg;
     };
 
     /*
      * Display help message only for the sender.
      */
-    var displayHelp = function() {
+    var displayHelp = function () {
         socket.emit('chatMessage', 'You have typed help.');
     };
 
-    var sendMessage = function(msg, room) {
+    var sendMessage = function (msg, room) {
         io.to(room).emit('chatMessage', msg);
     };
 
-    var sendPrivateMessage = function(msg, receiver) {
-        if(clients.hasOwnProperty(receiver)) {
+    var sendPrivateMessage = function (msg, receiver) {
+        if (clients.hasOwnProperty(receiver)) {
             socket.to(clients[receiver]).emit('privateMessage', msg);
         }
         else {
@@ -115,7 +119,29 @@ io.on('connection', function(socket) {
         socket.emit('privateMessage', msg);
     };
 
+    var kick = function (userName) {
+        // If sender is Admin, then try to kick user.
+        if (socket.isAdmin()) {
+            if (clients.hasOwnProperty(userName)) {
+                socket.to(clients[userName]).emit('kicked');
+                socket.to(socket.activeRoom).emit('userKicked', userName);
+            }
+        }
+    }
 
+    var ban = function (userName, time) {
+        if (socket.isAdmin()) {
+            if (clients.hasOwnProperty(userName)) {
+                socket.to(clients[userName]).emit('banned', time);
+                var banInfo = { 
+                    user: userName, 
+                    time: time 
+                };
+                socket.to(socket.activeRoom).emit('userBanned', banInfo);
+            }
+        }
+    }
+    
     // Populate user list on disconnect.
     socket.on('disconnect', onDisconnect);
 
@@ -126,6 +152,6 @@ io.on('connection', function(socket) {
     socket.on('chatMessage', onChatMessage);
 });
 
-http.listen(3000, function(){
-  console.log('listening on *:3000');
+http.listen(3000, function () {
+    console.log('listening on *:3000');
 });
